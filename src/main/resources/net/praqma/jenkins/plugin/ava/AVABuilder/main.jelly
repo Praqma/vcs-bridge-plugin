@@ -1,0 +1,12 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+		<f:radioBlock name="${prefix}branchType" value="ccfp" title="${%Get a ClearCase view from path}" checked="${instance.isOfType(prefix,'ccfp')}">
+			<st:include page="scms/ClearCaseUCMFromView.jelly" class="net.praqma.jenkins.plugin.ava.AVABuilder" />
+		</f:radioBlock>
+		
+		<f:radioBlock name="${prefix}branchType" value="hg" title="${%Get a Mercurial branch}" checked="${instance.isOfType(prefix,'hg')}">
+			<st:include page="scms/Mercurial.jelly" class="net.praqma.jenkins.plugin.ava.AVABuilder" />
+		</f:radioBlock>
+
+</j:jelly>
