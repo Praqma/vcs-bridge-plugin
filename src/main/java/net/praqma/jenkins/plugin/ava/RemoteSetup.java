@@ -4,12 +4,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import net.praqma.clearcase.Cool;
 import net.praqma.clearcase.ucm.entities.UCM;
 import net.praqma.util.debug.appenders.StreamAppender;
+import net.praqma.vcs.model.AbstractBranch;
+import net.praqma.vcs.model.AbstractReplay;
+import net.praqma.vcs.model.exceptions.ElementDoesNotExistException;
+import net.praqma.vcs.model.exceptions.ElementNotCreatedException;
+import net.praqma.vcs.model.exceptions.UnableToCheckoutCommitException;
+import net.praqma.vcs.model.exceptions.UnableToReplayException;
+import net.praqma.vcs.model.exceptions.UnsupportedBranchException;
 import net.praqma.vcs.util.ClearCaseUCM;
+import net.praqma.vcs.util.Cycle;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
-import net.praqma.vcs.util.configuration.exception.ConfigurationException;
 import net.praqma.vcs.util.configuration.implementation.ClearCaseConfiguration;
 
 import hudson.FilePath.FileCallable;
@@ -45,33 +51,42 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		/* TODO Somehow detect clearcase configuration */
 		UCM.setContext( UCM.ContextType.CLEARTOOL );
 		
-		out.println( "[AVA] Generating source on slave" );
+		this.source = checkConfiguration( source, workspacePathName, false );
+		this.target = checkConfiguration( target, workspacePathName, true );
 		
-		//try {
-			source = checkConfiguration( source, workspacePathName );
-			out.println( "[AVA] Checked" );
-			//source.generate();
-			out.println( "[AVA] Generated" );
-			/*
-		} catch (ConfigurationException e) {
-			throw new IOException( "Could not generate source: " + e.getMessage() );
+		out.println( "[AVA] Source configuration:\n" + source.toString() );
+		out.println( "[AVA] Target configuration:\n" + target.toString() );
+		
+		try {
+			out.println( "[AVA] Getting source branch" );
+			AbstractBranch sourceBranch = this.source.getBranch();
+	
+			out.println( "[AVA] Getting replay" );
+			AbstractReplay replay = target.getReplay();
+			
+			out.println( "[AVA] Initializing cycle" );
+			Cycle.cycle( sourceBranch, replay, null );
+		} catch (ElementNotCreatedException e) {
+			e.printStackTrace();
+			throw new IOException( "Some elements were not created: " + e.getMessage() );
+		} catch (ElementDoesNotExistException e) {
+			e.printStackTrace();
+			throw new IOException( "Some elements were not found: " + e.getMessage() );
+		} catch (UnableToCheckoutCommitException e) {
+			e.printStackTrace();
+			throw new IOException( "Could not checkout commit: " + e.getMessage() );
+		} catch (UnableToReplayException e) {
+			e.printStackTrace();
+			throw new IOException( "Could not replay: " + e.getMessage() );
+		} catch (UnsupportedBranchException e) {
+			e.printStackTrace();
+			throw new IOException( e.getMessage() );
 		}
-		*/
-		
-		out.println( "[AVA] Generating target on slave" );
-		
-		//try {
-			target = checkConfiguration( target, workspacePathName );
-			//target.generate();
-			/*
-		} catch (ConfigurationException e) {
-			throw new IOException( "Could not generate target: " + e.getMessage() );
-		}*/
 		
 		return true;
 	}
 	
-	private AbstractConfiguration checkConfiguration( AbstractConfiguration config, String workspacePathName ) throws IOException {
+	private AbstractConfiguration checkConfiguration( AbstractConfiguration config, String workspacePathName, boolean input ) throws IOException {
 		/* ClearCase UCM */
 		if( config instanceof ClearCaseConfiguration ) {
 			ClearCaseConfiguration ccc = (ClearCaseConfiguration)config;
@@ -80,7 +95,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				File path = new File( workspacePathName );
 				if( path.exists()) {
 					try {
-						config = ClearCaseUCM.getConfigurationFromView( path );
+						config = ClearCaseUCM.getConfigurationFromView( path, input );
 					} catch ( Exception e ) {
 						e.printStackTrace();
 						throw new IOException( "Unable to get view from workspace: " + e.getMessage() );
@@ -91,7 +106,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 			} else {
 				File path = new File( config.getPathName() );
 				try {
-					config = ClearCaseUCM.getConfigurationFromView( path );
+					config = ClearCaseUCM.getConfigurationFromView( path, input );
 				} catch ( Exception e ) {
 					e.printStackTrace();
 					throw new IOException( "Unable to get view from path: " + e.getMessage() );
