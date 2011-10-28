@@ -21,12 +21,14 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Launcher;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.remoting.Future;
+import hudson.scm.SCM;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
@@ -59,19 +61,35 @@ public class AVABuilder extends Builder {
 
 	public boolean perform( AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener ) throws InterruptedException {
 		PrintStream out = listener.getLogger();
-
-		out.println( "[AVA] Performing...." );
+		
+		String workspace = "";
+		try {
+			EnvVars env = build.getEnvironment( listener );
+			
+			if( env.containsKey( "CC_VIEWPATH" ) ) {
+				workspace = env.get( "CC_VIEWPATH" );
+			} else {
+				workspace = env.get( "WORKSPACE" );
+			}
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		out.println( "WORKSPACE: " + workspace );
 		
 		Future<Boolean> fb = null;
 		try {
-			fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target ) );
+			fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target, workspace ) );
 			fb.get();
 		} catch (IOException e) {
 			out.println( "[AVA] Unable to perform: " + e.getMessage() );
 			e.printStackTrace();
+			return false;
 		} catch (ExecutionException e) {
 			out.println( "[AVA] Unable to execute: " + e.getMessage() );
 			e.printStackTrace();
+			return false;
 		}
 
 		return true;
