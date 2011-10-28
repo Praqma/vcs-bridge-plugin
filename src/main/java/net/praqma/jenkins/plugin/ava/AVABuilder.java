@@ -1,7 +1,9 @@
 package net.praqma.jenkins.plugin.ava;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import net.praqma.util.debug.appenders.StreamAppender;
@@ -24,6 +26,7 @@ import hudson.Launcher;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
+import hudson.remoting.Future;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
@@ -57,9 +60,19 @@ public class AVABuilder extends Builder {
 	public boolean perform( AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener ) throws InterruptedException {
 		PrintStream out = listener.getLogger();
 
-		out.println( "[AVA] Setting up source, " + this.source.getPathName() );
-
-		out.println( "[AVA] Setting up target, " + this.target.getPathName() );
+		out.println( "[AVA] Performing...." );
+		
+		Future<Boolean> fb = null;
+		try {
+			fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target ) );
+			fb.get();
+		} catch (IOException e) {
+			out.println( "[AVA] Unable to perform: " + e.getMessage() );
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			out.println( "[AVA] Unable to execute: " + e.getMessage() );
+			e.printStackTrace();
+		}
 
 		return true;
 	}

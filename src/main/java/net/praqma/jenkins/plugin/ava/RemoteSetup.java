@@ -31,7 +31,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 	public Boolean invoke( File workspace, VirtualChannel channel ) throws IOException, InterruptedException {
 		PrintStream out = listener.getLogger();
 		
-		out.println( "Generating source on slave" );
+		out.println( "[AVA] Generating source on slave" );
 		
 		try {
 			checkClearCaseConfiguration( source );
@@ -40,7 +40,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 			throw new IOException( "Could not generate source: " + e.getMessage() );
 		}
 		
-		out.println( "Generating target on slave" );
+		out.println( "[AVA] Generating target on slave" );
 		
 		try {
 			checkClearCaseConfiguration( target );
