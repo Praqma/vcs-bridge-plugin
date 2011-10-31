@@ -6,6 +6,7 @@ import java.io.PrintStream;
 
 import net.praqma.clearcase.ucm.entities.UCM;
 import net.praqma.util.debug.appenders.StreamAppender;
+import net.praqma.vcs.AVA;
 import net.praqma.vcs.model.AbstractBranch;
 import net.praqma.vcs.model.AbstractReplay;
 import net.praqma.vcs.model.exceptions.ElementDoesNotExistException;
@@ -13,9 +14,11 @@ import net.praqma.vcs.model.exceptions.ElementNotCreatedException;
 import net.praqma.vcs.model.exceptions.UnableToCheckoutCommitException;
 import net.praqma.vcs.model.exceptions.UnableToReplayException;
 import net.praqma.vcs.model.exceptions.UnsupportedBranchException;
+import net.praqma.vcs.persistence.XMLStrategy;
 import net.praqma.vcs.util.ClearCaseUCM;
 import net.praqma.vcs.util.Cycle;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
+import net.praqma.vcs.util.configuration.exception.ConfigurationException;
 import net.praqma.vcs.util.configuration.implementation.ClearCaseConfiguration;
 
 import hudson.FilePath.FileCallable;
@@ -51,15 +54,43 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		/* TODO Somehow detect clearcase configuration */
 		UCM.setContext( UCM.ContextType.CLEARTOOL );
 		
-		this.source = checkConfiguration( source, workspacePathName, false );
-		this.target = checkConfiguration( target, workspacePathName, true );
+		File p = new File( "ava.xml" );
+		out.println( "AVA:XML: " + p.getAbsolutePath() );
+		p.createNewFile();
+		try {
+			new AVA( new XMLStrategy( p ) );
+		} catch( IllegalStateException e ) {
+			/* Whoops, AVA already defined */
+		}
 		
-		out.println( "[AVA] Source configuration:\n" + source.toString() );
-		out.println( "[AVA] Target configuration:\n" + target.toString() );
+		this.source = checkConfiguration( out, source, workspacePathName, false );
+		this.target = checkConfiguration( out, target, workspacePathName, true );
 		
 		try {
+			out.println( "[AVA] Generating source branch" );
+			try {
+				source.generate();
+			} catch (ConfigurationException e) {
+				e.printStackTrace();
+				throw new IOException( "Could not generate source: " + e.getMessage() );
+			}
+			
+			out.println( "[AVA] Generating target branch" );
+			try {
+				target.generate();
+			} catch (ConfigurationException e) {
+				e.printStackTrace();
+				throw new IOException( "Could not generate target: " + e.getMessage() );
+			}
+			
+			out.println( "[AVA] Source configuration:\n" + source.toString() );
+			out.println( "[AVA] Target configuration:\n" + target.toString() );
+			
 			out.println( "[AVA] Getting source branch" );
 			AbstractBranch sourceBranch = this.source.getBranch();
+			
+			out.println( "[AVA] Source branch: " );
+			out.println( sourceBranch.toString() );
 	
 			out.println( "[AVA] Getting replay" );
 			AbstractReplay replay = target.getReplay();
@@ -80,13 +111,16 @@ public class RemoteSetup implements FileCallable<Boolean> {
 			throw new IOException( "Could not replay: " + e.getMessage() );
 		} catch (UnsupportedBranchException e) {
 			e.printStackTrace();
+			throw new IOException( "UNSUPPORTED BRANCH: " + e.getMessage() );
+		} catch (Exception e) {
+			e.printStackTrace();
 			throw new IOException( e.getMessage() );
 		}
 		
 		return true;
 	}
 	
-	private AbstractConfiguration checkConfiguration( AbstractConfiguration config, String workspacePathName, boolean input ) throws IOException {
+	private AbstractConfiguration checkConfiguration( PrintStream out, AbstractConfiguration config, String workspacePathName, boolean input ) throws IOException {
 		/* ClearCase UCM */
 		if( config instanceof ClearCaseConfiguration ) {
 			ClearCaseConfiguration ccc = (ClearCaseConfiguration)config;
@@ -96,6 +130,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				if( path.exists()) {
 					try {
 						config = ClearCaseUCM.getConfigurationFromView( path, input );
+						( (ClearCaseConfiguration) config ).iDontCare();
 					} catch ( Exception e ) {
 						e.printStackTrace();
 						throw new IOException( "Unable to get view from workspace: " + e.getMessage() );
