@@ -36,7 +36,7 @@ public class AVABuilder extends Builder {
 	private AbstractConfiguration target;
 
 	private boolean processingAll;
-	private boolean printDebug = true;
+	private boolean printDebug;
 
 	@DataBoundConstructor
 	public AVABuilder( AbstractConfiguration source, AbstractConfiguration target, boolean processingAll, boolean printDebug ) {
@@ -67,7 +67,8 @@ public class AVABuilder extends Builder {
 			e1.printStackTrace();
 		}
 		
-		out.println( "WORKSPACE: " + workspace );
+		out.println( "[AVA] Workspace: " + workspace );
+		out.println( "[AVA] debug is " + printDebug );
 		
 		Future<Boolean> fb = null;
 		try {
@@ -133,6 +134,10 @@ public class AVABuilder extends Builder {
 
 	public boolean isProcessingAll() {
 		return processingAll;
+	}
+	
+	public boolean isPrintDebug() {
+		return printDebug;
 	}
 
 	public boolean isOfType( String st, String type ) {
@@ -213,7 +218,7 @@ public class AVABuilder extends Builder {
 			
 			boolean debug = true;
 			try {
-				all = data.getBoolean( "printDebug" );
+				debug = data.getBoolean( "printDebug" );
 			} catch (JSONException e) {
 
 			}
@@ -224,6 +229,7 @@ public class AVABuilder extends Builder {
 		@Override
 		public boolean configure( StaplerRequest req, JSONObject data ) {
 			System.out.println( data.toString( 2 ) );
+			
 			return true;
 		}
 

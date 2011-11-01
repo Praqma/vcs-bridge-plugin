@@ -35,7 +35,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 	private BuildListener listener;
 	private String workspacePathName;
 	
-	private boolean printDebug = true;
+	private boolean printDebug;
 
 	public RemoteSetup( BuildListener listener, AbstractConfiguration source, AbstractConfiguration target, String workspacePathName, boolean printDebug ) {
 		this.source = source;
@@ -55,6 +55,8 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		net.praqma.util.debug.Logger.addAppender( app );
 		if( printDebug ) {
 			app.setMinimumLevel( net.praqma.util.debug.Logger.LogLevel.DEBUG );
+		} else {
+			app.setMinimumLevel( net.praqma.util.debug.Logger.LogLevel.INFO );
 		}
 		
 		/* TODO Somehow detect clearcase configuration */
@@ -96,17 +98,16 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				throw new IOException( "Could not generate target: " + e.getMessage() );
 			}
 			
-			out.println( "[AVA] Source configuration:\n" + source.toString() );
-			out.println( "[AVA] Target configuration:\n" + target.toString() );
+			out.println( "[AVA] Source configuration:\n-------------------\n" + source.toString() );
+			out.println( "[AVA] Target configuration:\n-------------------\n" + target.toString() );
 			
-			out.println( "[AVA] Getting source branch" );
 			AbstractBranch sourceBranch = this.source.getBranch();
 			
-			out.println( "[AVA] Source branch: " );
-			out.println( sourceBranch.toString() );
-	
-			out.println( "[AVA] Getting replay" );
+			out.println( "[AVA] Source branch:\n-------------------\n" + sourceBranch.toString() );
+			
 			AbstractReplay replay = target.getReplay();
+			
+			out.println( "[AVA] Target branch:\n-------------------\n" + target.getBranch().toString() );
 			
 			out.println( "[AVA] Initializing cycle" );
 			Cycle.cycle( sourceBranch, replay, null );
