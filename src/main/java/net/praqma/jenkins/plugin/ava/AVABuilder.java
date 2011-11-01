@@ -6,10 +6,8 @@ import java.io.PrintStream;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
-import net.praqma.util.debug.appenders.StreamAppender;
 import net.praqma.vcs.model.exceptions.ElementDoesNotExistException;
 import net.praqma.vcs.model.exceptions.ElementNotCreatedException;
-import net.praqma.vcs.util.ClearCaseUCM;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
 import net.praqma.vcs.util.configuration.exception.ConfigurationException;
 import net.praqma.vcs.util.configuration.implementation.ClearCaseConfiguration;
@@ -28,7 +26,6 @@ import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
 import hudson.remoting.Future;
-import hudson.scm.SCM;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import hudson.util.FormValidation;
@@ -39,21 +36,15 @@ public class AVABuilder extends Builder {
 	private AbstractConfiguration target;
 
 	private boolean processingAll;
-
-	private static StreamAppender app = new StreamAppender( System.out );
-
-	static {
-		app.setTemplate( "[%level]%space %message%newline" );
-		net.praqma.util.debug.Logger.addAppender( app );
-		app.setMinimumLevel( net.praqma.util.debug.Logger.LogLevel.DEBUG );
-	}
+	private boolean printDebug = true;
 
 	@DataBoundConstructor
-	public AVABuilder( AbstractConfiguration source, AbstractConfiguration target, boolean processingAll ) {
+	public AVABuilder( AbstractConfiguration source, AbstractConfiguration target, boolean processingAll, boolean printDebug ) {
 
 		logger.warning( "Constructing" );
 
 		this.processingAll = processingAll;
+		this.printDebug = printDebug;
 
 		this.source = source;
 		this.target = target;
@@ -80,7 +71,7 @@ public class AVABuilder extends Builder {
 		
 		Future<Boolean> fb = null;
 		try {
-			fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target, workspace ) );
+			fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target, workspace, printDebug ) );
 			fb.get();
 		} catch (IOException e) {
 			out.println( "[AVA] Unable to perform: " + e.getMessage() );
@@ -219,8 +210,15 @@ public class AVABuilder extends Builder {
 			} catch (JSONException e) {
 
 			}
+			
+			boolean debug = true;
+			try {
+				all = data.getBoolean( "printDebug" );
+			} catch (JSONException e) {
 
-			return new AVABuilder( source, target, all );
+			}
+
+			return new AVABuilder( source, target, all, debug );
 		}
 
 		@Override

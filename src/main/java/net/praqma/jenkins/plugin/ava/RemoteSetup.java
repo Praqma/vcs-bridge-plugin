@@ -34,13 +34,17 @@ public class RemoteSetup implements FileCallable<Boolean> {
 	
 	private BuildListener listener;
 	private String workspacePathName;
+	
+	private boolean printDebug = true;
 
-	public RemoteSetup( BuildListener listener, AbstractConfiguration source, AbstractConfiguration target, String workspacePathName ) {
+	public RemoteSetup( BuildListener listener, AbstractConfiguration source, AbstractConfiguration target, String workspacePathName, boolean printDebug ) {
 		this.source = source;
 		this.target = target;
 		
 		this.listener = listener;
 		this.workspacePathName = workspacePathName;
+		
+		this.printDebug = printDebug;
 	}
 
 	public Boolean invoke( File workspace, VirtualChannel channel ) throws IOException, InterruptedException {
@@ -49,7 +53,9 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		StreamAppender app = new StreamAppender( out );
 		app.setTemplate( "[%level]%space %message%newline" );
 		net.praqma.util.debug.Logger.addAppender( app );
-		app.setMinimumLevel( net.praqma.util.debug.Logger.LogLevel.DEBUG );
+		if( printDebug ) {
+			app.setMinimumLevel( net.praqma.util.debug.Logger.LogLevel.DEBUG );
+		}
 		
 		/* TODO Somehow detect clearcase configuration */
 		UCM.setContext( UCM.ContextType.CLEARTOOL );

@@ -28,6 +28,9 @@
 	    <f:entry title="Process all">
 	        <f:checkbox name="AVABuilder.processingAll" checked="${h.defaultToTrue(instance.processingAll)}" default="checked" />
 	    </f:entry>
+	    <f:entry title="Print debug">
+	        <f:checkbox name="AVABuilder.printDebug" checked="${h.defaultToTrue(instance.printDebug)}" default="checked" />
+	    </f:entry>
 	</f:block>
 	<f:block>
 		<u>Source</u>
