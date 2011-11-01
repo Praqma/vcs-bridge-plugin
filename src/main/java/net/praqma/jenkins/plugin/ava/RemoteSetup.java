@@ -75,6 +75,13 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				throw new IOException( "Could not generate source: " + e.getMessage() );
 			}
 			
+			/* Try */
+			if( source instanceof ClearCaseConfiguration ) {
+				ClearCaseConfiguration ccc = (ClearCaseConfiguration)source;
+				ccc.setParentStream( ccc.getFoundationBaseline().getStream() );
+				out.println( "[AVA] Setting output stream to " + ccc.getStreamName() );
+			}
+			
 			out.println( "[AVA] Generating target branch" );
 			try {
 				target.generate();
@@ -130,7 +137,8 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				if( path.exists()) {
 					try {
 						config = ClearCaseUCM.getConfigurationFromView( path, input );
-						( (ClearCaseConfiguration) config ).iDontCare();
+						ccc = (ClearCaseConfiguration) config;
+						ccc.iDontCare();
 					} catch ( Exception e ) {
 						e.printStackTrace();
 						throw new IOException( "Unable to get view from workspace: " + e.getMessage() );
