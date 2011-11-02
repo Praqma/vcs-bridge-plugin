@@ -20,6 +20,7 @@ import net.praqma.vcs.util.Cycle;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
 import net.praqma.vcs.util.configuration.exception.ConfigurationException;
 import net.praqma.vcs.util.configuration.implementation.ClearCaseConfiguration;
+import net.praqma.vcs.util.configuration.implementation.MercurialConfiguration;
 
 import hudson.FilePath.FileCallable;
 import hudson.model.BuildListener;
@@ -167,6 +168,16 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				} catch ( Exception e ) {
 					e.printStackTrace();
 					throw new IOException( "Unable to get view from path: " + e.getMessage() );
+				}
+			}
+		} else if( config instanceof MercurialConfiguration ) {
+			MercurialConfiguration mc = (MercurialConfiguration)config;
+			if( mc.getPathName().length() == 0 ) {
+				out.println( "[AVA] USING HG WS" );
+				File path = new File( workspacePathName );
+				if( path.exists()) {
+					mc.setPathName( workspacePathName );
+					out.println( "[AVA] Setting path to " + path );
 				}
 			}
 		}
