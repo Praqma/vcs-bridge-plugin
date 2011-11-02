@@ -83,11 +83,11 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				throw new IOException( "Could not generate source: " + e.getMessage() );
 			}
 			
-			/* Try */
+			/* Try to set the parent of the source */
 			if( source instanceof ClearCaseConfiguration ) {
 				ClearCaseConfiguration ccc = (ClearCaseConfiguration)source;
 				ccc.setParentStream( ccc.getFoundationBaseline().getStream() );
-				out.println( "[AVA] Setting output stream to " + ccc.getStreamName() );
+				out.println( "[AVA] Setting source parent stream to " + ccc.getStreamName() );
 			}
 			
 			out.println( "[AVA] Generating target branch" );
@@ -96,6 +96,13 @@ public class RemoteSetup implements FileCallable<Boolean> {
 			} catch (ConfigurationException e) {
 				e.printStackTrace();
 				throw new IOException( "Could not generate target: " + e.getMessage() );
+			}
+			
+			/* Try to set the parent of the target */
+			if( target instanceof ClearCaseConfiguration ) {
+				ClearCaseConfiguration ccc = (ClearCaseConfiguration)target;
+				ccc.setParentStream( ccc.getFoundationBaseline().getStream() );
+				out.println( "[AVA] Setting source parent stream to " + ccc.getStreamName() );
 			}
 			
 			out.println( "[AVA] Source configuration:\n-------------------\n" + source.toString() );
