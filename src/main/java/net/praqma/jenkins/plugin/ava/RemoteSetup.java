@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import net.praqma.clearcase.ucm.entities.UCM;
+import net.praqma.util.debug.Logger.LogLevel;
+import net.praqma.util.debug.appenders.FileAppender;
 import net.praqma.util.debug.appenders.StreamAppender;
 import net.praqma.vcs.AVA;
 import net.praqma.vcs.VersionControlSystems;
@@ -15,6 +17,7 @@ import net.praqma.vcs.model.exceptions.ElementNotCreatedException;
 import net.praqma.vcs.model.exceptions.UnableToCheckoutCommitException;
 import net.praqma.vcs.model.exceptions.UnableToReplayException;
 import net.praqma.vcs.model.exceptions.UnsupportedBranchException;
+import net.praqma.vcs.model.extensions.CommitCounter;
 import net.praqma.vcs.persistence.XMLStrategy;
 import net.praqma.vcs.util.ClearCaseUCM;
 import net.praqma.vcs.util.Cycle;
@@ -62,6 +65,10 @@ public class RemoteSetup implements FileCallable<Boolean> {
 			app.setMinimumLevel( net.praqma.util.debug.Logger.LogLevel.INFO );
 		}
 		
+		FileAppender fa = new FileAppender( new File( "ava-bridge.log" ) );
+		fa.setMinimumLevel( LogLevel.DEBUG );
+		net.praqma.util.debug.Logger.addAppender( fa );
+		
 		/* TODO Somehow detect clearcase configuration */
 		UCM.setContext( UCM.ContextType.CLEARTOOL );
 		
@@ -76,6 +83,9 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		
 		this.source = checkConfiguration( out, source, workspacePathName, false );
 		this.target = checkConfiguration( out, target, workspacePathName, true );
+		
+		CommitCounter cc = new CommitCounter();
+		AVA.getInstance().registerExtension( "counter", cc );
 		
 		try {
 			out.println( "[AVA] Generating source branch" );
@@ -139,7 +149,11 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new IOException( e.getMessage() );
+		} finally {
+			net.praqma.util.debug.Logger.removeAppender( fa );
 		}
+		
+		out.println( "[AVA] Created " + cc.getCommitCount() + " commit" + ( cc.getCommitCount() == 1 ? "" : "s" ) );
 		
 		return true;
 	}
@@ -204,6 +218,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				
 			case Mercurial:
 				config = new MercurialConfiguration( path, null );
+				config.setPathName( workspacePathName );
 				break;
 			}
 		}
