@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import net.praqma.clearcase.ucm.entities.UCM;
 import net.praqma.util.debug.appenders.StreamAppender;
 import net.praqma.vcs.AVA;
+import net.praqma.vcs.VersionControlSystems;
 import net.praqma.vcs.model.AbstractBranch;
 import net.praqma.vcs.model.AbstractReplay;
 import net.praqma.vcs.model.exceptions.ElementDoesNotExistException;
@@ -17,6 +18,7 @@ import net.praqma.vcs.model.exceptions.UnsupportedBranchException;
 import net.praqma.vcs.persistence.XMLStrategy;
 import net.praqma.vcs.util.ClearCaseUCM;
 import net.praqma.vcs.util.Cycle;
+import net.praqma.vcs.util.VCS;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
 import net.praqma.vcs.util.configuration.exception.ConfigurationException;
 import net.praqma.vcs.util.configuration.implementation.ClearCaseConfiguration;
@@ -106,16 +108,16 @@ public class RemoteSetup implements FileCallable<Boolean> {
 				out.println( "[AVA] Setting source parent stream to " + ccc.getStreamName() );
 			}
 			
-			out.println( "[AVA] Source configuration:\n-------------------\n" + source.toString() );
-			out.println( "[AVA] Target configuration:\n-------------------\n" + target.toString() );
+			out.println( "[AVA] Source configuration: " + source.toString() );
+			out.println( "[AVA] Target configuration: " + target.toString() );
 			
 			AbstractBranch sourceBranch = this.source.getBranch();
 			
-			out.println( "[AVA] Source branch:\n-------------------\n" + sourceBranch.toString() );
+			out.println( "[AVA] Source branch: " + sourceBranch.toString() );
 			
 			AbstractReplay replay = target.getReplay();
 			
-			out.println( "[AVA] Target branch:\n-------------------\n" + target.getBranch().toString() );
+			out.println( "[AVA] Target branch: " + target.getBranch().toString() );
 			
 			out.println( "[AVA] Initializing cycle" );
 			Cycle.cycle( sourceBranch, replay, null );
@@ -143,42 +145,66 @@ public class RemoteSetup implements FileCallable<Boolean> {
 	}
 	
 	private AbstractConfiguration checkConfiguration( PrintStream out, AbstractConfiguration config, String workspacePathName, boolean input ) throws IOException {
-		/* ClearCase UCM */
-		if( config instanceof ClearCaseConfiguration ) {
-			ClearCaseConfiguration ccc = (ClearCaseConfiguration)config;
-			/* Determine missing options */
-			if( ccc.getPathName().length() == 0 ) {
-				File path = new File( workspacePathName );
-				if( path.exists()) {
-					try {
-						config = ClearCaseUCM.getConfigurationFromView( path, input );
-						ccc = (ClearCaseConfiguration) config;
-						ccc.iDontCare();
-					} catch ( Exception e ) {
-						e.printStackTrace();
-						throw new IOException( "Unable to get view from workspace: " + e.getMessage() );
+		if( config != null ) {
+			/* ClearCase UCM */
+			if( config instanceof ClearCaseConfiguration ) {
+				ClearCaseConfiguration ccc = (ClearCaseConfiguration)config;
+				/* Determine missing options */
+				if( ccc.getPathName().length() == 0 ) {
+					File path = new File( workspacePathName );
+					if( path.exists() ) {
+						try {
+							/* Generate new configuration based on workspace */
+							out.println( "[AVA] Generating configuration based on workspace" );
+							config = ClearCaseUCM.getConfigurationFromView( path, input );
+							ccc = (ClearCaseConfiguration) config;
+							ccc.iDontCare();
+						} catch ( Exception e ) {
+							e.printStackTrace();
+							throw new IOException( "Unable to get view from workspace: " + e.getMessage() );
+						}
+					} else {
+						throw new IOException( "Could not determine path name of configuration" );
 					}
 				} else {
-					throw new IOException( "Could not determine path name of configuration" );
+					File path = new File( config.getPathName() );
+					try {
+						config = ClearCaseUCM.getConfigurationFromView( path, input );
+					} catch ( Exception e ) {
+						e.printStackTrace();
+						throw new IOException( "Unable to get view from path: " + e.getMessage() );
+					}
 				}
-			} else {
-				File path = new File( config.getPathName() );
-				try {
-					config = ClearCaseUCM.getConfigurationFromView( path, input );
-				} catch ( Exception e ) {
-					e.printStackTrace();
-					throw new IOException( "Unable to get view from path: " + e.getMessage() );
+				
+			/* Mercurial */
+			} else if( config instanceof MercurialConfiguration ) {
+				MercurialConfiguration mc = (MercurialConfiguration)config;
+				if( mc.getPathName().length() == 0 ) {
+					out.println( "[AVA] USING HG WS" );
+					File path = new File( workspacePathName );
+					if( path.exists()) {
+						mc.setPathName( workspacePathName );
+						out.println( "[AVA] Setting path to " + path );
+					}
 				}
 			}
-		} else if( config instanceof MercurialConfiguration ) {
-			MercurialConfiguration mc = (MercurialConfiguration)config;
-			if( mc.getPathName().length() == 0 ) {
-				out.println( "[AVA] USING HG WS" );
-				File path = new File( workspacePathName );
-				if( path.exists()) {
-					mc.setPathName( workspacePathName );
-					out.println( "[AVA] Setting path to " + path );
+		} else {
+			File path = new File( workspacePathName );
+			VersionControlSystems vcs = VCS.determineVCS( path );
+			out.println( "[AVA] Generating " + vcs + " configuration based on workspace" );
+			switch( vcs ) {
+			case ClearCase:
+				try {
+					config = ClearCaseUCM.getConfigurationFromView( path, input );
+				} catch (Exception e) {
+					out.println( "Unable to create ClearCase configuration: " + e.getMessage() );
+					e.printStackTrace();
 				}
+				break;
+				
+			case Mercurial:
+				config = new MercurialConfiguration( path, null );
+				break;
 			}
 		}
 		

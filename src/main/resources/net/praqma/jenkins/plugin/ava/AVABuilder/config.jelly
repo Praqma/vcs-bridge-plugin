@@ -36,6 +36,9 @@
 		<u>Source</u>
 	</f:block>
 	<f:block>
+		<f:radioBlock name="source_branchType" value="workspace" title="${%Determine by workspace}" checked="${instance.isOfType('s','workspace')}">
+		</f:radioBlock>
+		
 		<j:set var="prefix" value="source_" />
 		<st:include page="main.jelly" class="net.praqma.jenkins.plugin.ava.AVABuilder" />
 	</f:block>

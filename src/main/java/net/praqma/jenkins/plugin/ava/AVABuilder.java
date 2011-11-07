@@ -1,6 +1,5 @@
 package net.praqma.jenkins.plugin.ava;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.concurrent.ExecutionException;
@@ -148,6 +147,8 @@ public class AVABuilder extends Builder {
 				return true;
 			} else if( type.equals( "ccfp" ) && source instanceof ClearCaseConfiguration ) {
 				return true;
+			} else if( type.equals( "workspace" ) && source == null ) {
+				return true;
 			}
 			
 		} else {
@@ -178,11 +179,11 @@ public class AVABuilder extends Builder {
 
 			String type = data.getString( "value" );
 
-			File path = new File( data.getString( "viewpath" ) );
-			String pathName = data.getString( "viewpath" );
+			
 
 			/* ClearCase */
 			if( type.equals( "ccfp" ) ) {
+				String pathName = data.getString( "viewpath" );
 				try {
 					config = new ClearCaseConfiguration( pathName, null, null, null, null, null );
 				} catch (ConfigurationException e) {
@@ -192,8 +193,11 @@ public class AVABuilder extends Builder {
 
 				/* Mercurial */
 			} else if( type.equals( "hg" ) ) {
+				String pathName = data.getString( "viewpath" );
 				String branch = data.getString( "branch" );
 				config = new MercurialConfiguration( pathName, branch );
+			} else if( type.equals( "workspace" ) ) {
+				
 			}
 
 			return config;
