@@ -1,0 +1,19 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+	xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+	xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:u="/util">
+	
+	<tr>
+		<td style="font-weight:bold;" colspan="2" align="center">${branch.getVersionControlSystem()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Path}</td>
+		<td>${branch.getPath()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Branch}</td>
+		<td>${branch.getName()}</td>
+	</tr>
+	
+</j:jelly>

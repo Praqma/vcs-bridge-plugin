@@ -69,10 +69,11 @@ public class AVABuilder extends Builder {
 		out.println( "[AVA] Workspace: " + workspace );
 		out.println( "[AVA] debug is " + printDebug );
 		
-		Future<Boolean> fb = null;
+		Future<Result> fb = null;
+		Result result = null;
 		try {
 			fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target, workspace, printDebug ) );
-			fb.get();
+			result = fb.get();
 		} catch (IOException e) {
 			out.println( "[AVA] Unable to perform: " + e.getMessage() );
 			e.printStackTrace();
@@ -82,6 +83,11 @@ public class AVABuilder extends Builder {
 			e.printStackTrace();
 			return false;
 		}
+		
+		AVABuildAction action = new AVABuildAction( result.commitCount );
+		action.setSourceBranch( result.sourceBranch );
+		action.setTargetBranch( result.targetBranch );
+		build.getActions().add( action );		
 
 		return true;
 	}

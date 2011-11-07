@@ -1,0 +1,45 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+	xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+	xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:u="/util">
+	
+	<tr><td colspan="2" style="width:100%" align="center">
+	<h1>${%Bridging Report}</h1>
+	${%Bridged} ${it.getCommitCount()} ${it.getSourceBranch().getVersionControlSystem()} ${%commits to} ${it.getTargetBranch().getVersionControlSystem()} 
+	<table>
+		<tr>
+			<td style="font-weight:bold;font-size:18px" colspan="2" align="center">
+			Source Branch
+			</td>
+			<j:set var="branch" value="${it.getSourceBranch()}" />
+			<j:choose>
+				<j:when test="${branch.getVersionControlSystem() == 'Mercurial'}">
+					<st:include page="Mercurial.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:when>
+				<j:when test="${branch.getVersionControlSystem() == 'ClearCase'}">
+					<st:include page="ClearCase.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:when>
+				<j:otherwise>
+					<st:include page="unknown.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:otherwise>
+			</j:choose>
+			
+			<td style="font-weight:bold;font-size:18px" colspan="2" align="center">
+			Target Branch
+			</td>
+			<j:set var="branch" value="${it.getTargetBranch()}" />
+			<j:choose>
+				<j:when test="${branch.getVersionControlSystem() == 'Mercurial'}">
+					<st:include page="Mercurial.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:when>
+				<j:when test="${branch.getVersionControlSystem() == 'ClearCase'}">
+					<st:include page="ClearCase.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:when>
+				<j:otherwise>
+					<st:include page="unknown.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:otherwise>
+			</j:choose>
+		</tr>
+	</table>
+	</td></tr>
+	
+</j:jelly>

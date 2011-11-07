@@ -1,0 +1,78 @@
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler"
+	xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson"
+	xmlns:f="/lib/form" xmlns:i="jelly:fmt" xmlns:u="/util">
+	
+	<tr>
+		<td style="font-weight:bold;" colspan="2" align="center">${branch.getVersionControlSystem()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%PVob}</td>
+		<td>${branch.getPVob()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Component}</td>
+		<td>${branch.getComponent()}</td>
+	</tr>
+	
+	<tr>
+		<td colspan="2" align="center" style="font-weight:bold">${%Input Part}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Parent}</td>
+		<td>${branch.getInput().getParent()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Stream}</td>
+		<td>${branch.getInputStream()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Foundation}</td>
+		<td>${branch.getInput().getBaseline()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Path}</td>
+		<td>${branch.getInputPath()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%View tag}</td>
+		<td>${branch.getInputViewtag()}</td>
+	</tr>
+	
+	<tr>
+		<td colspan="2" align="center" style="font-weight:bold">${%Output Part}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Parent}</td>
+		<td>${branch.getOutput().getParent()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Stream}</td>
+		<td>${branch.getOutputStream()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Foundation}</td>
+		<td>${branch.getOutput().getBaseline()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%Path}</td>
+		<td>${branch.getOutputPath()}</td>
+	</tr>
+	
+	<tr>
+		<td style="font-weight:bold">${%View tag}</td>
+		<td>${branch.getOutputViewtag()}</td>
+	</tr>
+	
+	
+</j:jelly>

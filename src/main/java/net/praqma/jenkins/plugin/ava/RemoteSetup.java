@@ -3,6 +3,7 @@ package net.praqma.jenkins.plugin.ava;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Serializable;
 
 import net.praqma.clearcase.ucm.entities.UCM;
 import net.praqma.util.debug.Logger.LogLevel;
@@ -31,7 +32,7 @@ import hudson.FilePath.FileCallable;
 import hudson.model.BuildListener;
 import hudson.remoting.VirtualChannel;
 
-public class RemoteSetup implements FileCallable<Boolean> {
+public class RemoteSetup implements FileCallable<Result> {
 	
 	private static final long serialVersionUID = -4591556492458099617L;
 	
@@ -42,7 +43,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 	private String workspacePathName;
 	
 	private boolean printDebug;
-
+	
 	public RemoteSetup( BuildListener listener, AbstractConfiguration source, AbstractConfiguration target, String workspacePathName, boolean printDebug ) {
 		this.source = source;
 		this.target = target;
@@ -53,7 +54,7 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		this.printDebug = printDebug;
 	}
 
-	public Boolean invoke( File workspace, VirtualChannel channel ) throws IOException, InterruptedException {
+	public Result invoke( File workspace, VirtualChannel channel ) throws IOException, InterruptedException {
 		PrintStream out = listener.getLogger();
 		
 		StreamAppender app = new StreamAppender( out );
@@ -83,6 +84,10 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		
 		this.source = checkConfiguration( out, source, workspacePathName, false );
 		this.target = checkConfiguration( out, target, workspacePathName, true );
+		
+		Result result = new Result();
+		result.sourceConfiguration = this.source;
+		result.targetConfiguration = this.target;
 		
 		CommitCounter cc = new CommitCounter();
 		AVA.getInstance().registerExtension( "counter", cc );
@@ -122,12 +127,14 @@ public class RemoteSetup implements FileCallable<Boolean> {
 			out.println( "[AVA] Target configuration: " + target.toString() );
 			
 			AbstractBranch sourceBranch = this.source.getBranch();
+			result.sourceBranch = sourceBranch;
 			
-			out.println( "[AVA] Source branch: " + sourceBranch.toString() );
+			//out.println( "[AVA] Source branch: " + sourceBranch.toString() );
 			
 			AbstractReplay replay = target.getReplay();
 			
-			out.println( "[AVA] Target branch: " + target.getBranch().toString() );
+			//out.println( "[AVA] Target branch: " + target.getBranch().toString() );
+			result.targetBranch = target.getBranch();
 			
 			out.println( "[AVA] Initializing cycle" );
 			Cycle.cycle( sourceBranch, replay, null );
@@ -154,8 +161,9 @@ public class RemoteSetup implements FileCallable<Boolean> {
 		}
 		
 		out.println( "[AVA] Created " + cc.getCommitCount() + " commit" + ( cc.getCommitCount() == 1 ? "" : "s" ) );
+		result.commitCount = cc.getCommitCount();
 		
-		return true;
+		return result;
 	}
 	
 	private AbstractConfiguration checkConfiguration( PrintStream out, AbstractConfiguration config, String workspacePathName, boolean input ) throws IOException {
