@@ -18,18 +18,18 @@
 	</properties>
 
 	<repositories>
-		<repository>
-			<id>m.g.o-public</id>
-			<url>http://maven.glassfish.org/content/groups/public/</url>
-		</repository>
+        <repository>
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </repository>
 	</repositories>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<id>m.g.o-public</id>
-			<url>http://maven.glassfish.org/content/groups/public/</url>
-		</pluginRepository>
-	</pluginRepositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>repo.jenkins-ci.org</id>
+            <url>http://repo.jenkins-ci.org/public/</url>
+        </pluginRepository>
+    </pluginRepositories>
 
 	<licenses>
 		<license>
@@ -99,9 +99,9 @@
     
 	<scm>
 		<!-- To be done -->
-		<connection>scm:git:http://github.com/Praqma/Matrix-Reloaded-Plugin.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com/Praqma/Matrix-Reloaded-Plugin.git</developerConnection>
-		<url>https://github.com/Praqma/Matrix-Reloaded-Plugin.git</url>
+		<connection>scm:git:http://github.com/Praqma/vcs-bridge-plugin.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/Praqma/vcs-bridge-plugin.git</developerConnection>
+		<url>https://github.com/Praqma/vcs-bridge-plugin.git</url>
 	</scm>
 	
 </project>
