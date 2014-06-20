@@ -78,16 +78,11 @@
 		</profile>
 	</profiles>
 	
-    <developers>
+   <developers>
         <developer>
-            <id>wolfgarnet</id>
-            <name>Christian Wolfgang</name>
-            <email>support@praqma.net</email>
-            <organization>Praqma A/S</organization>
-            <roles>
-                <role>developer</role>
-            </roles>
-            <timezone>+1</timezone>
+            <id>praqma_josra</id>
+            <name>Praqma Josra</name>
+            <email>josra@praqma.net</email>
         </developer>
     </developers>
     
