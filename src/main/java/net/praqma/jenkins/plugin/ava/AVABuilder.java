@@ -3,20 +3,9 @@ package net.praqma.jenkins.plugin.ava;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
 
-import net.praqma.vcs.model.exceptions.ElementDoesNotExistException;
-import net.praqma.vcs.model.exceptions.ElementNotCreatedException;
-import net.praqma.vcs.util.configuration.AbstractConfiguration;
-import net.praqma.vcs.util.configuration.exception.ConfigurationException;
-import net.praqma.vcs.util.configuration.implementation.ClearCaseConfiguration;
-import net.praqma.vcs.util.configuration.implementation.MercurialConfiguration;
-import net.sf.json.JSONException;
-import net.sf.json.JSONObject;
 
 import org.kohsuke.stapler.DataBoundConstructor;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 
 import hudson.EnvVars;
 import hudson.Extension;
@@ -27,60 +16,53 @@ import hudson.model.AbstractProject;
 import hudson.remoting.Future;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
-import hudson.util.FormValidation;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AVABuilder extends Builder {
 
-	private AbstractConfiguration source;
-	private AbstractConfiguration target;
+	private Vcs source;
+	private Vcs target;
 
 	private boolean processingAll;
 	private boolean printDebug;
 
 	@DataBoundConstructor
-	public AVABuilder( AbstractConfiguration source, AbstractConfiguration target, boolean processingAll, boolean printDebug ) {
-
-		logger.warning( "Constructing" );
-
+	public AVABuilder( Vcs source, Vcs target, boolean processingAll, boolean printDebug ) {
 		this.processingAll = processingAll;
 		this.printDebug = printDebug;
-
 		this.source = source;
 		this.target = target;
 	}
 
-	public boolean perform( AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener ) throws InterruptedException {
+    @Override
+	public boolean perform( AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener ) throws InterruptedException, IOException {
 		PrintStream out = listener.getLogger();
 		
-		String workspace = "";
-		try {
-			EnvVars env = build.getEnvironment( listener );
-			
-			if( env.containsKey( "CC_VIEWPATH" ) ) {
-				workspace = env.get( "CC_VIEWPATH" );
-			} else {
-				workspace = env.get( "WORKSPACE" );
-			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		out.println( "[AVA] Workspace: " + workspace );
-		out.println( "[AVA] debug is " + printDebug );
-		
-		Future<Result> fb = null;
+		File workspace = null;
+        EnvVars env = build.getEnvironment( listener );
+
+        if( env.containsKey( "CC_VIEWPATH" ) ) {
+            workspace = new File(env.get( "CC_VIEWPATH" ));
+        } else {
+            workspace =  new File(env.get( "WORKSPACE" ));
+        }
+
+		out.println( "[AVA] Workspace: " + workspace.getAbsolutePath() );
+		out.println( "[AVA]     Debug: " + printDebug );
+
 		Result result = null;
 		try {
-			fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target, workspace, printDebug ) );
+			Future<Result> fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target, workspace, printDebug ) );
 			result = fb.get();
 		} catch (IOException e) {
 			out.println( "[AVA] Unable to perform: " + e.getMessage() );
-			e.printStackTrace();
+            e.printStackTrace(out);
 			return false;
 		} catch (ExecutionException e) {
 			out.println( "[AVA] Unable to execute: " + e.getMessage() );
-			e.printStackTrace();
+			e.printStackTrace(out);
 			return false;
 		}
 		
@@ -92,50 +74,6 @@ public class AVABuilder extends Builder {
 		return true;
 	}
 
-	/**** Getters for Jenkins UI ****/
-
-	/**
-	 * Get the path of the branch
-	 * 
-	 * @param st
-	 * @return
-	 */
-	public String getViewpath( String st ) {
-		try {
-			if( st.startsWith( "s" ) ) {
-				/* Source */
-				return this.source.getPathName();
-			} else {
-				/* Target */
-				return this.target.getPathName();
-			}
-		} catch (Exception e) {
-			return null;
-		}
-	}
-
-	/**
-	 * Get the branch name
-	 * 
-	 * @param st
-	 * @return
-	 * @throws ElementNotCreatedException
-	 * @throws ElementDoesNotExistException
-	 */
-	public String getBranch( String st ) throws ElementNotCreatedException, ElementDoesNotExistException {
-		if( st.startsWith( "s" ) ) {
-			/* Source */
-			if( source instanceof MercurialConfiguration ) {
-				return ( (MercurialConfiguration) this.source ).getBranchName();
-			}
-		} else {
-			/* Target */
-			if( target instanceof MercurialConfiguration ) {
-				return ( (MercurialConfiguration) this.target ).getBranchName();
-			}
-		}
-		return "";
-	}
 
 	public boolean isProcessingAll() {
 		return processingAll;
@@ -145,29 +83,48 @@ public class AVABuilder extends Builder {
 		return printDebug;
 	}
 
-	public boolean isOfType( String st, String type ) {
-		logger.fine( "ST=" + st + ". TYPE:" + type );
-		if( st.startsWith( "s" ) ) {
-			/* Source */
-			if( type.equals( "hg" ) && source instanceof MercurialConfiguration ) {
-				return true;
-			} else if( type.equals( "ccfp" ) && source instanceof ClearCaseConfiguration ) {
-				return true;
-			} else if( type.equals( "workspace" ) && source == null ) {
-				return true;
-			}
-			
-		} else {
-			/* Target */
-			if( type.equals( "hg" ) && target instanceof MercurialConfiguration ) {
-				return true;
-			} else if( type.equals( "ccfp" ) && target instanceof ClearCaseConfiguration ) {
-				return true;
-			}
-		}
+    /**
+     * @return the source
+     */
+    public Vcs getSource() {
+        return source;
+    }
 
-		return false;
-	}
+    /**
+     * @param source the source to set
+     */
+    public void setSource(Vcs source) {
+        this.source = source;
+    }
+
+    /**
+     * @return the target
+     */
+    public Vcs getTarget() {
+        return target;
+    }
+
+    /**
+     * @param target the target to set
+     */
+    public void setTarget(Vcs target) {
+        this.target = target;
+    }
+
+    /**
+     * @param processingAll the processingAll to set
+     */
+    public void setProcessingAll(boolean processingAll) {
+        this.processingAll = processingAll;
+    }
+
+    /**
+     * @param printDebug the printDebug to set
+     */
+    public void setPrintDebug(boolean printDebug) {
+        this.printDebug = printDebug;
+    }
+
 
 	@Extension
 	public static class DescriptorImpl extends BuildStepDescriptor<Builder> {
@@ -176,84 +133,35 @@ public class AVABuilder extends Builder {
 			load();
 		}
 
+        @Override
 		public String getDisplayName() {
 			return "AVA Bridging";
-		}
-
-		private AbstractConfiguration getConfiguration( JSONObject data ) {
-			AbstractConfiguration config = null;
-
-			String type = data.getString( "value" );
-
-			
-
-			/* ClearCase */
-			if( type.equals( "ccfp" ) ) {
-				String pathName = data.getString( "viewpath" );
-				try {
-					config = new ClearCaseConfiguration( pathName, null, null, null, null, null );
-				} catch (ConfigurationException e) {
-					logger.severe( "Could not create ClearCase configuration" );
-					e.printStackTrace();
-				}
-
-				/* Mercurial */
-			} else if( type.equals( "hg" ) ) {
-				String pathName = data.getString( "viewpath" );
-				String branch = data.getString( "branch" );
-				config = new MercurialConfiguration( pathName, branch );
-			} else if( type.equals( "workspace" ) ) {
-				
-			}
-
-			return config;
-		}
-
-		@Override
-		public Builder newInstance( StaplerRequest req, JSONObject data ) {
-			System.out.println( data.toString( 2 ) );
-
-			JSONObject sourceData = data.getJSONObject( "source_branchType" );
-			JSONObject targetData = data.getJSONObject( "target_branchType" );
-
-			AbstractConfiguration source = getConfiguration( sourceData );
-			AbstractConfiguration target = getConfiguration( targetData );
-
-			boolean all = true;
-			try {
-				all = data.getBoolean( "processingAll" );
-			} catch (JSONException e) {
-
-			}
-			
-			boolean debug = true;
-			try {
-				debug = data.getBoolean( "printDebug" );
-			} catch (JSONException e) {
-
-			}
-
-			return new AVABuilder( source, target, all, debug );
-		}
-
-		@Override
-		public boolean configure( StaplerRequest req, JSONObject data ) {
-			System.out.println( data.toString( 2 ) );
-			
-			return true;
-		}
-
-		public FormValidation doCheck( @QueryParameter String value ) {
-			// Executable requires admin permission
-			return FormValidation.validateExecutable( value );
-		}
+		}        
 
 		@Override
 		public boolean isApplicable( Class<? extends AbstractProject> arg0 ) {
 			return true;
 		}
+        
+        public List<VcsDescriptor<?>> getInputs() {
+            List<VcsDescriptor<?>> inputs = new ArrayList<>();
+            for(VcsDescriptor<?> v : Vcs.getAll()) {                
+                if(Input.class.isAssignableFrom(v.clazz)) {                   
+                    inputs.add(v);
+                }
+            }
+            return inputs;
+        }
+        
+        public List<VcsDescriptor<?>> getOutputs() {
+            List<VcsDescriptor<?>> outputs = new ArrayList<>();
+            for(VcsDescriptor<?> v : Vcs.getAll()) {
+                if(Output.class.isAssignableFrom(v.clazz)) {
+                    outputs.add(v);
+                }
+            }            
+            return outputs;
+        }
 
 	}
-
-	private static final Logger logger = Logger.getLogger( AVABuilder.class.getName() );
 }
