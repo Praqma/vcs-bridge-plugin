@@ -26,15 +26,25 @@ package net.praqma.jenkins.plugin.ava;
 import hudson.Extension;
 import java.io.File;
 import java.io.IOException;
+import net.praqma.vcs.AVA;
+import net.praqma.vcs.model.extensions.GitPublisherListener;
+import net.praqma.vcs.util.CommandLine;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
+import net.praqma.vcs.util.configuration.exception.ConfigurationException;
+import net.praqma.vcs.util.configuration.implementation.GitConfiguration;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 /**
  *
  * @author Mads
  */
 public class Git extends Vcs implements Input,Output {
     
-    private String branch,path;
+    private String branch,path,remote,url;
+    
+    //Default empty constructor for Autodetction
+    public Git() { }
     
     @DataBoundConstructor
     public Git(String branch, String path) {
@@ -43,14 +53,29 @@ public class Git extends Vcs implements Input,Output {
     }
 
     @Override
-    public AbstractConfiguration generateIntialConfiguration(File path, boolean input) throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public AbstractConfiguration generateIntialConfiguration(File ws, boolean input) throws IOException {
+        File finalPath = StringUtils.isBlank(path) ? ws : new File(path);
+        String selectedBranch = StringUtils.isBlank(branch) ? "master" : branch; 
+        GitConfiguration mc = new GitConfiguration(finalPath, selectedBranch, url, remote);
+        mc.setPathName(finalPath.getAbsolutePath());
+        this.activeConfiguration = mc;
+        return mc;
     }
 
     @Override
     public void generate() throws IOException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try {
+            activeConfiguration.generate();
+        } catch (ConfigurationException ex) {
+            throw new IOException("Generating for Git failed", ex);
+        }
     }
+
+    @Override
+    public void registerExtensions() {
+        GitPublisherListener publisher = new GitPublisherListener(getRemote(), getBranch(), activeConfiguration.getPath());
+        AVA.getInstance().registerExtension("GitPublisher", publisher);
+    }   
 
     /**
      * @return the branch
@@ -78,6 +103,47 @@ public class Git extends Vcs implements Input,Output {
      */
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @Override
+    public boolean isFromScratch(File workspace) {
+        File finalPath = StringUtils.isBlank(path) ? workspace : new File(path);
+        File dotGit = new File(finalPath, ".git");
+        if(!dotGit.exists()) {       
+            CommandLine.run("git init", finalPath);           
+            return true;
+        } 
+        return false;
+    }
+
+    /**
+     * @return the remote
+     */
+    public String getRemote() {
+        return remote;
+    }
+
+    /**
+     * @param remote the remote to set
+     */
+    @DataBoundSetter
+    public void setRemote(String remote) {
+        this.remote = remote;
+    }
+
+    /**
+     * @return the url
+     */
+    public String getUrl() {
+        return url;
+    }
+
+    /**
+     * @param url the url to set
+     */
+    @DataBoundSetter
+    public void setUrl(String url) {
+        this.url = url;
     }
 
 

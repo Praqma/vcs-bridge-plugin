@@ -8,6 +8,12 @@
     <f:entry field="path" title="Repository path" >
         <f:textbox/>
     </f:entry>
+    <f:entry field="remote" title="Remote">
+        <f:textbox/>
+    </f:entry>
+    <f:entry field="url" title="Url">
+        <f:textbox/>
+    </f:entry>
 </j:jelly>
 
 

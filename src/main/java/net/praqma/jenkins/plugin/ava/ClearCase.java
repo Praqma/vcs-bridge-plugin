@@ -26,7 +26,6 @@ package net.praqma.jenkins.plugin.ava;
 import hudson.Extension;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.praqma.clearcase.ucm.UCMException;
@@ -50,19 +49,16 @@ public class ClearCase extends Vcs implements Input,Output {
     private String customViewPath;
     
     @DataBoundConstructor
-    public ClearCase() {
-        
-    }
+    public ClearCase() { }
         
     @Override
     public void generate() throws IOException {
         try {
             activeConfiguration.generate();
-            ClearCaseConfiguration ccc = (ClearCaseConfiguration)activeConfiguration;
-            
+            ClearCaseConfiguration ccc = (ClearCaseConfiguration)activeConfiguration;            
             Baseline blFoundation =  ccc.getFoundationBaseline();
             Stream pStream = blFoundation.getStream();            
-            ccc.setParentStream( pStream );            
+            ccc.setParentStream( pStream );
             activeConfiguration = ccc;
         } catch (ConfigurationException | UCMException ex) {
             throw new IOException("Unable to generate configuration",ex);            
@@ -101,6 +97,11 @@ public class ClearCase extends Vcs implements Input,Output {
     @DataBoundSetter
     public void setCustomViewPath(String customViewPath) {
         this.customViewPath = customViewPath;
+    }
+
+    @Override
+    public boolean isFromScratch(File workspace) {
+        return false;
     }
     
     @Extension

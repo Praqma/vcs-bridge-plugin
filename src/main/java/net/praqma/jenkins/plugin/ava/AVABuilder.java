@@ -1,8 +1,8 @@
 package net.praqma.jenkins.plugin.ava;
 
+import hudson.AbortException;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.concurrent.ExecutionException;
 
 
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -13,7 +13,6 @@ import hudson.Launcher;
 import hudson.model.BuildListener;
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
-import hudson.remoting.Future;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Builder;
 import java.io.File;
@@ -25,13 +24,8 @@ public class AVABuilder extends Builder {
 	private Vcs source;
 	private Vcs target;
 
-	private boolean processingAll;
-	private boolean printDebug;
-
 	@DataBoundConstructor
-	public AVABuilder( Vcs source, Vcs target, boolean processingAll, boolean printDebug ) {
-		this.processingAll = processingAll;
-		this.printDebug = printDebug;
+	public AVABuilder( Vcs source, Vcs target ) {
 		this.source = source;
 		this.target = target;
 	}
@@ -39,48 +33,33 @@ public class AVABuilder extends Builder {
     @Override
 	public boolean perform( AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener ) throws InterruptedException, IOException {
 		PrintStream out = listener.getLogger();
-		
-		File workspace = null;
-        EnvVars env = build.getEnvironment( listener );
-
-        if( env.containsKey( "CC_VIEWPATH" ) ) {
-            workspace = new File(env.get( "CC_VIEWPATH" ));
-        } else {
-            workspace =  new File(env.get( "WORKSPACE" ));
-        }
-
-		out.println( "[AVA] Workspace: " + workspace.getAbsolutePath() );
-		out.println( "[AVA]     Debug: " + printDebug );
-
-		Result result = null;
+		EnvVars env = build.getEnvironment( listener );        
+		File workspace = env.containsKey( "CC_VIEWPATH" ) ? new File(env.get( "CC_VIEWPATH" )) : new File(env.get( "WORKSPACE" )); 
+        String avaStateFile = String.format( "ava-%s.xml", build.getProject().getDisplayName().replace(" ", "_") );
+        String logFileName = String.format( "ava-%s-%s.log", build.getProject().getDisplayName().replace(" ", "_"), build.number );
+        Result fb = null;
 		try {
-			Future<Result> fb = build.getWorkspace().actAsync( new RemoteSetup( listener, source, target, workspace, printDebug ) );
-			result = fb.get();
-		} catch (IOException e) {
+			fb = build.getWorkspace().act(new CommitReplayer(build, listener, source, target, workspace, logFileName, avaStateFile )) ;            
+            AVABuildAction action = new AVABuildAction( fb.commitCount );
+            action.setSourceBranch( fb.sourceBranch );
+            action.setTargetBranch( fb.targetBranch );
+            build.getActions().add( action );
+		} catch (ReplayException e) {
 			out.println( "[AVA] Unable to perform: " + e.getMessage() );
             e.printStackTrace(out);
-			return false;
-		} catch (ExecutionException e) {
-			out.println( "[AVA] Unable to execute: " + e.getMessage() );
-			e.printStackTrace(out);
-			return false;
-		}
-		
-		AVABuildAction action = new AVABuildAction( result.commitCount );
-		action.setSourceBranch( result.sourceBranch );
-		action.setTargetBranch( result.targetBranch );
-		build.getActions().add( action );		
+            fb = e.r;
+            AVABuildAction action = new AVABuildAction( e.r.commitCount );
+            action.setSourceBranch( e.r.sourceBranch );
+            action.setTargetBranch( e.r.targetBranch );            
+            build.getActions().add( action );
+            throw new AbortException(e.getCause().getMessage());
+		} finally {
+            if(fb != null) {
+                out.println( "[AVA] Created " + fb.commitCount + " commit" + ( fb.commitCount == 1 ? "" : "s" ) );            
+            }
+        } 
 
 		return true;
-	}
-
-
-	public boolean isProcessingAll() {
-		return processingAll;
-	}
-	
-	public boolean isPrintDebug() {
-		return printDebug;
 	}
 
     /**
@@ -109,20 +88,6 @@ public class AVABuilder extends Builder {
      */
     public void setTarget(Vcs target) {
         this.target = target;
-    }
-
-    /**
-     * @param processingAll the processingAll to set
-     */
-    public void setProcessingAll(boolean processingAll) {
-        this.processingAll = processingAll;
-    }
-
-    /**
-     * @param printDebug the printDebug to set
-     */
-    public void setPrintDebug(boolean printDebug) {
-        this.printDebug = printDebug;
     }
 
 

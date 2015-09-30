@@ -3,9 +3,6 @@ package net.praqma.jenkins.plugin.ava;
 import hudson.Extension;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
 import net.praqma.vcs.util.configuration.exception.ConfigurationException;
 import net.praqma.vcs.util.configuration.implementation.MercurialConfiguration;
@@ -73,6 +70,11 @@ public class Mercurial extends Vcs implements Input,Output {
      */
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @Override
+    public boolean isFromScratch(File workspace) {
+        return false;
     }
 
     @Extension

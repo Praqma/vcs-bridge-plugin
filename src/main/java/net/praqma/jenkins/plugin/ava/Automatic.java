@@ -26,11 +26,15 @@ package net.praqma.jenkins.plugin.ava;
 import hudson.Extension;
 import java.io.File;
 import java.io.IOException;
+import net.praqma.clearcase.ucm.UCMException;
+import net.praqma.clearcase.ucm.entities.Baseline;
+import net.praqma.clearcase.ucm.entities.Stream;
 import net.praqma.vcs.VersionControlSystems;
 import net.praqma.vcs.util.VCS;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
 import net.praqma.vcs.util.configuration.exception.ConfigurationException;
 import net.praqma.vcs.util.configuration.implementation.ClearCaseConfiguration;
+import net.praqma.vcs.util.configuration.implementation.GitConfiguration;
 import net.praqma.vcs.util.configuration.implementation.MercurialConfiguration;
 import org.kohsuke.stapler.DataBoundConstructor;
 
@@ -40,22 +44,25 @@ import org.kohsuke.stapler.DataBoundConstructor;
  */
 public class Automatic extends Vcs implements Input {
     
+    private transient VersionControlSystems currentVcs;
+    
     @DataBoundConstructor
     public Automatic () { }
 
     @Override
     public AbstractConfiguration generateIntialConfiguration(File wspace, boolean input) throws IOException {
-
         VersionControlSystems vcs = VCS.determineVCS( wspace );
-        
-        if(vcs.equals(VersionControlSystems.ClearCase)) {            
+        currentVcs = vcs;
+        if(currentVcs.equals(VersionControlSystems.ClearCase)) {            
             this.activeConfiguration = new ClearCase().generateIntialConfiguration(wspace, input);    
             return this.activeConfiguration;            
-        } else if (vcs.equals(VersionControlSystems.Mercurial)) {
+        } else if (currentVcs.equals(VersionControlSystems.Mercurial)) {
             this.activeConfiguration =  new MercurialConfiguration(wspace, "default");
             return this.activeConfiguration;
-        } else if (vcs.equals(VersionControlSystems.Git)) {
-            return null;
+        } else if (currentVcs.equals(VersionControlSystems.Git)) {
+            this.activeConfiguration = new GitConfiguration(wspace, "master");
+            activeConfiguration.setPathName(wspace.getAbsolutePath());
+            return this.activeConfiguration;
         } else {
             return null;
         }
@@ -64,10 +71,24 @@ public class Automatic extends Vcs implements Input {
     @Override
     public void generate() throws IOException {
         try {
-            this.activeConfiguration.generate();
-        } catch (ConfigurationException cex) {
+            if(currentVcs.equals(VersionControlSystems.ClearCase)) {
+                activeConfiguration.generate();
+                ClearCaseConfiguration ccc = (ClearCaseConfiguration)activeConfiguration;            
+                Baseline blFoundation =  ccc.getFoundationBaseline();
+                Stream pStream = blFoundation.getStream();            
+                ccc.setParentStream( pStream );
+                activeConfiguration = ccc;
+            } else {
+                activeConfiguration.generate();
+            }            
+        } catch (ConfigurationException | UCMException cex) {
             throw new IOException("Error in generation for Automatic", cex);
         }
+    }
+
+    @Override
+    public boolean isFromScratch(File workspace) {
+        return false;
     }
 
     @Extension

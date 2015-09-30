@@ -1,3 +1,3 @@
 <div>
-  This plugin can bridge ClearCase baselines to commits in Git or Mercurial
+  This plugin can bridge a commit from Clearse to Git/Mercurial and vice-versa.
 </div>

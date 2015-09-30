@@ -51,10 +51,10 @@
     </developers>
     
     <dependencies>
-        <dependency>
+        <dependency>    
             <groupId>net.praqma</groupId>
             <artifactId>ava</artifactId>
-            <version>0.1.9-SNAPSHOT</version>
+            <version>0.1.11-SNAPSHOT</version>
         </dependency>        
     </dependencies>
     

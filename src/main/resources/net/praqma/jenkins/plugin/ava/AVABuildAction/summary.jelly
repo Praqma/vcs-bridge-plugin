@@ -18,6 +18,9 @@
 				<j:when test="${branch.getVersionControlSystem() == 'ClearCase'}">
 					<st:include page="ClearCase.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
 				</j:when>
+				<j:when test="${branch.getVersionControlSystem() == 'Git'}">
+					<st:include page="Git.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:when>
 				<j:otherwise>
 					<st:include page="unknown.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
 				</j:otherwise>
@@ -33,6 +36,9 @@
 				</j:when>
 				<j:when test="${branch.getVersionControlSystem() == 'ClearCase'}">
 					<st:include page="ClearCase.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
+				</j:when>
+				<j:when test="${branch.getVersionControlSystem() == 'Git'}">
+					<st:include page="Git.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />
 				</j:when>
 				<j:otherwise>
 					<st:include page="unknown.jelly" class="net.praqma.jenkins.plugin.ava.AVABuildAction" />

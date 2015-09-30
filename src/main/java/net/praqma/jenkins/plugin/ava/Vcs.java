@@ -29,7 +29,6 @@ import hudson.model.Describable;
 import hudson.model.Descriptor;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Serializable;
 import jenkins.model.Jenkins;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
@@ -41,6 +40,19 @@ import net.praqma.vcs.util.configuration.AbstractConfiguration;
 public abstract class Vcs implements ExtensionPoint, Describable<Vcs>, Serializable {
 
     public abstract AbstractConfiguration generateIntialConfiguration(File workspace, boolean input) throws IOException;
+    
+    /**
+     * Is the source or the target blank? If the source is blank we can replay the target into the source to get a 
+     * baseline repository
+     * @param workspace
+     * @return 
+     */
+    public abstract boolean isFromScratch(File workspace);
+    
+    public void registerExtensions() {
+        
+    }
+    
     public abstract void generate() throws IOException;
     
     protected transient AbstractConfiguration activeConfiguration;

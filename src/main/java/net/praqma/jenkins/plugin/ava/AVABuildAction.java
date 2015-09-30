@@ -3,6 +3,7 @@ package net.praqma.jenkins.plugin.ava;
 import net.praqma.vcs.model.AbstractBranch;
 import net.praqma.vcs.util.configuration.AbstractConfiguration;
 import hudson.model.Action;
+import net.praqma.vcs.model.AbstractCommit;
 
 public class AVABuildAction implements Action {
 
@@ -11,8 +12,10 @@ public class AVABuildAction implements Action {
 	
 	private AbstractConfiguration targetConfiguration;
 	private AbstractBranch targetBranch;
+    
+    private AbstractCommit lastCommit;
 	
-	private int commitCount = 0;
+	private int commitCount = 0;   
 	
 	public AVABuildAction( int count ) {
 		this.commitCount = count;
@@ -61,16 +64,45 @@ public class AVABuildAction implements Action {
 		this.targetBranch = targetBranch;
 	}
 	
+    @Override
 	public String getIconFileName() {
 		return "graph.gif";
 	}
 
+    @Override
 	public String getDisplayName() {
 		return "AVA Bridging";
 	}
-
+    
+    @Override
 	public String getUrlName() {
 		return "ava";
 	}
 
+    /**
+     * @return the lastCommit
+     */
+    public AbstractCommit getLastCommit() {
+        return lastCommit;
+    }
+
+    /**
+     * @param lastCommit the lastCommit to set
+     */
+    public void setLastCommit(AbstractCommit lastCommit) {
+        this.lastCommit = lastCommit;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Commit id: ").
+                append(lastCommit.getKey()).
+                append(" Author: ").
+                append(lastCommit.getAuthor()).
+                append(" Commit date: ").
+                append(lastCommit.getAuthorDate());
+        return builder.toString();
+    }
+    
 }
