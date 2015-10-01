@@ -26,6 +26,7 @@ package net.praqma.jenkins.plugin.ava;
 import hudson.Extension;
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Logger;
 import net.praqma.vcs.AVA;
 import net.praqma.vcs.model.extensions.GitPublisherListener;
 import net.praqma.vcs.util.CommandLine;
@@ -41,6 +42,7 @@ import org.kohsuke.stapler.DataBoundSetter;
  */
 public class Git extends Vcs implements Input,Output {
     
+    private static final Logger log = Logger.getLogger(Git.class.getName());
     private String branch,path,remote,url;
     
     //Default empty constructor for Autodetction
@@ -56,15 +58,25 @@ public class Git extends Vcs implements Input,Output {
     public AbstractConfiguration generateIntialConfiguration(File ws, boolean input) throws IOException {
         File finalPath = StringUtils.isBlank(path) ? ws : new File(path);
         String selectedBranch = StringUtils.isBlank(branch) ? "master" : branch; 
-        GitConfiguration mc = new GitConfiguration(finalPath, selectedBranch, url, remote);
-        mc.setPathName(finalPath.getAbsolutePath());
+        GitConfiguration mc;
+        if(StringUtils.isBlank(url) || StringUtils.isBlank(remote)) {
+            log.fine("Remote and/or location not specified. Defaulting to behaviour where commits are not pushed");
+            mc = new GitConfiguration(finalPath, selectedBranch);
+            mc.setPathName(finalPath.getAbsolutePath());
+        } else {
+            log.fine("Remote and/or location specfied. Push on creation turned on");
+            mc = new GitConfiguration(finalPath, selectedBranch, url, remote);
+            mc.setPathName(finalPath.getAbsolutePath());
+        }
         this.activeConfiguration = mc;
+        log.fine("Generation of intial configuration was a success");
         return mc;
     }
 
     @Override
     public void generate() throws IOException {
         try {
+            log.fine("Generating the final configuration");
             activeConfiguration.generate();
         } catch (ConfigurationException ex) {
             throw new IOException("Generating for Git failed", ex);
@@ -73,8 +85,14 @@ public class Git extends Vcs implements Input,Output {
 
     @Override
     public void registerExtensions() {
-        GitPublisherListener publisher = new GitPublisherListener(getRemote(), getBranch(), activeConfiguration.getPath());
-        AVA.getInstance().registerExtension("GitPublisher", publisher);
+        AVA a = AVA.getInstance();
+        if(a!=null) {            
+            GitPublisherListener publisher = new GitPublisherListener(getRemote(), getBranch(), activeConfiguration.getPath());
+            a.registerExtension("GitPublisher", publisher);
+            log.fine("GitPublisher listener registered");            
+        } else {
+            log.fine("GitPublisher listener not registered. Ava instance not present.");
+        }         
     }   
 
     /**

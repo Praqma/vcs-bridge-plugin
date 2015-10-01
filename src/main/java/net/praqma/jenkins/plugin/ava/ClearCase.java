@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.praqma.clearcase.ucm.UCMException;
 import net.praqma.clearcase.ucm.entities.Baseline;
 import net.praqma.clearcase.ucm.entities.Stream;
 import net.praqma.vcs.model.exceptions.ElementException;
@@ -60,7 +59,7 @@ public class ClearCase extends Vcs implements Input,Output {
             Stream pStream = blFoundation.getStream();            
             ccc.setParentStream( pStream );
             activeConfiguration = ccc;
-        } catch (ConfigurationException | UCMException ex) {
+        } catch (ConfigurationException ex) {
             throw new IOException("Unable to generate configuration",ex);            
         }
     }
@@ -78,10 +77,11 @@ public class ClearCase extends Vcs implements Input,Output {
             }
             
             return this.activeConfiguration;
-        } catch (ElementException | ConfigurationException | UCMException  ex) {
+        } catch (ElementException | ConfigurationException ex) {
             Logger.getLogger(ClearCase.class.getName()).log(Level.SEVERE, null, ex);
             throw new IOException("Failed to generate configuration from ClearCase view", ex);
         }
+        
     }
 
     /**

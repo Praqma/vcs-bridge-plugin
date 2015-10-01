@@ -26,7 +26,6 @@ package net.praqma.jenkins.plugin.ava;
 import hudson.Extension;
 import java.io.File;
 import java.io.IOException;
-import net.praqma.clearcase.ucm.UCMException;
 import net.praqma.clearcase.ucm.entities.Baseline;
 import net.praqma.clearcase.ucm.entities.Stream;
 import net.praqma.vcs.VersionControlSystems;
@@ -81,7 +80,7 @@ public class Automatic extends Vcs implements Input {
             } else {
                 activeConfiguration.generate();
             }            
-        } catch (ConfigurationException | UCMException cex) {
+        } catch (ConfigurationException cex) {
             throw new IOException("Error in generation for Automatic", cex);
         }
     }
