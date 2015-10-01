@@ -39,7 +39,7 @@ public class AVABuilder extends Builder {
         String logFileName = String.format( "ava-%s-%s.log", build.getProject().getDisplayName().replace(" ", "_"), build.number );
         Result fb = null;
 		try {
-			fb = build.getWorkspace().act(new CommitReplayer(build, listener, source, target, workspace, logFileName, avaStateFile )) ;            
+			fb = build.getWorkspace().act(new CommitReplayer(listener, source, target, workspace, logFileName, avaStateFile )) ;            
             AVABuildAction action = new AVABuildAction( fb.commitCount );
             action.setSourceBranch( fb.sourceBranch );
             action.setTargetBranch( fb.targetBranch );

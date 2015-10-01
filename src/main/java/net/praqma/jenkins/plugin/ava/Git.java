@@ -55,9 +55,15 @@ public class Git extends Vcs implements Input,Output {
     @Override
     public AbstractConfiguration generateIntialConfiguration(File ws, boolean input) throws IOException {
         File finalPath = StringUtils.isBlank(path) ? ws : new File(path);
-        String selectedBranch = StringUtils.isBlank(branch) ? "master" : branch; 
-        GitConfiguration mc = new GitConfiguration(finalPath, selectedBranch, url, remote);
+        String selectedBranch = StringUtils.isBlank(branch) ? "master" : branch;
+        GitConfiguration mc;
+        if(!StringUtils.isBlank(url) && !StringUtils.isBlank(remote)) {
+            mc = new GitConfiguration(finalPath, selectedBranch, url, remote);            
+        } else {
+            mc = new GitConfiguration(finalPath, selectedBranch);            
+        } 
         mc.setPathName(finalPath.getAbsolutePath());
+
         this.activeConfiguration = mc;
         return mc;
     }

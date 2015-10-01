@@ -42,17 +42,13 @@ public class CommitReplayer implements FileCallable<Result> {
 	private File workspacePathName;
     public final String logFileName;
     public final String avaStateXml;
-    public final File buildRoot;
-    public final AbstractBuild<?,?> build;
     
-	public CommitReplayer(AbstractBuild<?,?> build, BuildListener listener, Vcs source, Vcs target, File workspacePathName, String logFileName, String avaStateXml ) {
+	public CommitReplayer(BuildListener listener, Vcs source, Vcs target, File workspacePathName, String logFileName, String avaStateXml ) {
 		this.source = source;
 		this.target = target;		
 		this.workspacePathName = workspacePathName;
         this.logFileName = logFileName;
         this.avaStateXml = avaStateXml;
-        this.build = build;
-        this.buildRoot = build.getRootDir();
         this.listener = listener;
 	}
     
@@ -128,10 +124,7 @@ public class CommitReplayer implements FileCallable<Result> {
 		} finally {
 			net.praqma.util.debug.Logger.removeAppender( fa );
 		}
-		        
-        //Copy ava.xml to builds folder
-        new FilePath(p).copyTo(new FilePath(channel, buildRoot.getAbsolutePath()));
-		
+		  
 		return result;
 	}
 
@@ -159,10 +152,10 @@ public class CommitReplayer implements FileCallable<Result> {
         sourceBranch.update();
         
         //Old (!!WRONG) We only update the date when ava was run...not the date of the commit on the source branch!
-        Date oldNow = AVA.getInstance().getLastCommitDate(sourceBranch);
+        Date now = AVA.getInstance().getLastCommitDate(sourceBranch);
         
         //Get the latest commit date. State is now very fragile..but correct.
-        Date now = previousAction(build) != null ? previousAction(build).getLastCommit().getCommitterDate() : null;
+        //Date now = previousAction(build) != null ? previousAction(build).getLastCommit().getCommitterDate() : null;
         
         //Get the commits to from souce to be replayed onto target
         List<? extends AbstractCommit> commits = sourceBranch.getCommits(false, now);
@@ -177,5 +170,7 @@ public class CommitReplayer implements FileCallable<Result> {
             result.lastCommit = acm;
             result.commitCount = cc.getCommitCount();
         }
+        
+        AVA.getInstance().setLastCommitDate( sourceBranch, now != null ? now : new Date() );
     }
 }
