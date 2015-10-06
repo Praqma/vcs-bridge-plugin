@@ -152,25 +152,30 @@ public class CommitReplayer implements FileCallable<Result> {
         sourceBranch.update();
         
         //Old (!!WRONG) We only update the date when ava was run...not the date of the commit on the source branch!
+        
+        
         Date now = AVA.getInstance().getLastCommitDate(sourceBranch);
+        if(now == null) {
+            out.println("[AVA] Replaying commits from scratch");
+        } else {
+            out.println( String.format( "[AVA] Replaying commits from date %s", now ) );
+        }
         
         //Get the latest commit date. State is now very fragile..but correct.
         //Date now = previousAction(build) != null ? previousAction(build).getLastCommit().getCommitterDate() : null;
         
         //Get the commits to from souce to be replayed onto target
         List<? extends AbstractCommit> commits = sourceBranch.getCommits(false, now);
-        
-        //Replay
-        //Cycle.rotate(sourceBranch, commits, replay);
-        
+
         for(AbstractCommit acm : commits) {
             acm.load();
             sourceBranch.checkoutCommit(acm);
+            //Setup the replay based on the source
             replay.replay(acm);
             result.lastCommit = acm;
             result.commitCount = cc.getCommitCount();
         }
         
-        AVA.getInstance().setLastCommitDate( sourceBranch, now != null ? now : new Date() );
+        AVA.getInstance().setLastCommitDate( sourceBranch, new Date() );
     }
 }
